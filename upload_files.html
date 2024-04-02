@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form method="post" enctype="multipart/form-data">
+        <div>Upload files</div>
+        <input type="file" id="files" multiple />
+        <button type="button" onclick="uploadFiles()">Submit</button>
+    </form>
+    <br />
+    <div>Uploaded files:</div>
+    <ul id="result"></ul>
+    <script>
+        function uploadFiles() {
+            var formData = new FormData();
+            var files = document.getElementById('files').files;
+            for (var i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+
+            fetch('http://localhost:5000/uploadfiles', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error(`Fail to upload file: ${response.body}`);
+                })
+                .then(data => {
+                    alert(JSON.stringify(data, null, 4))
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    </script>
+    <script>
+        fetch("http://localhost:5000/")
+            .then(response => response.json())
+            .then(data => {
+                data["files"].forEach(filename => {
+                    const l = document.createElement("li")
+                    const s = document.createElement("span")
+                    s.style.cursor = "pointer";
+                    s.innerText = filename;
+                    s.addEventListener("click", () => {
+                        fetch("http://localhost:5000/downloadfile", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/octet-stream"
+                            },
+                            body: JSON.stringify({filename: s.innerText})
+                        }).then(response => {
+                            if (!response.ok) { throw new Error(`Fail to download file: ${response.body}`); }
+                            return response.blob();
+                        }).then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = s.innerText;
+                            link.click();
+                            window.URL.revokeObjectURL(url);
+                        }).catch(error => {
+                            console.error(error);
+                            alert(error);
+                        });
+                    })
+                    l.appendChild(s);
+                    document.getElementById("result").appendChild(l);
+                });
+            })
+            .catch(error => console.error(`Error fetching data: ${error}`));
+    </script>
+</body>
+</html>

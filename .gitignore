@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# VS Code
+.vscode/
+
+# Files after build and run
+index-store
+data/
+index.map
+index.deque
